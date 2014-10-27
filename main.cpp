@@ -29,11 +29,6 @@ public:
     virtual double get_strength(void)const=0;
     virtual void set_strength_to(double)=0;
     virtual Bond * make_bond(Site *, Site *)=0;
-
-    bool pointer_less_than(const Bond * lhs, const Bond * rhs)
-    {
-        return lhs->get_strength() < rhs->get_strength();
-    }
     virtual ~Bond() {};
 };
 
@@ -45,8 +40,8 @@ public:
     virtual Site * get_origin()=0;
     virtual void set_current_site(Site *)=0;
     virtual bool more_neighbors()=0;
-    virtual Site * get_next_neighbor()=0;
-    virtual void write_bond(std::ofstream & file, Bond * & bond)=0;
+    virtual Site * get_next_neighbor(int * =NULL)=0;
+    virtual void write_bond(std::ofstream &, Bond * &)=0;
 };
 
 // Abstract class for simulation
@@ -165,6 +160,7 @@ private:
         bool operator< (const location & other) const
         {
             if(loc[0] < other.loc[0]) return true;
+            if(other.loc[0] < loc[0]) return false;
             if(loc[1] < other.loc[1]) return true;
             return false;
         }
@@ -175,19 +171,29 @@ private:
     std::map<location, Site *> sites_by_loc;
     std::map<Site *, location> sites_by_ptr;
 
-    Site * get_site_ptr(location loc)
+    Site * get_site_ptr(location loc, int * new_site = NULL)
     {
         Site * loc_ptr;
 
-        if(sites_by_loc.count(loc) != 0)
+        if(sites_by_loc.count(loc) > 0)
         {
             loc_ptr = sites_by_loc[loc];
+
+            if(new_site != NULL)
+            {
+                *new_site = 0;
+            }
         }
         else
         {
             loc_ptr = Site_ptr->make_site();
             sites_by_loc.insert(std::make_pair(loc, loc_ptr));
             sites_by_ptr.insert(std::make_pair(loc_ptr, loc));
+
+            if(new_site != NULL)
+            {
+                *new_site = 1;
+            }
         }
 
         return loc_ptr;
@@ -224,7 +230,7 @@ public:
         return false;
     }
 
-    Site * get_next_neighbor()
+    Site * get_next_neighbor(int * new_site = NULL)
     {
         location neighbor = current_site;
 
@@ -232,20 +238,20 @@ public:
         {
         case 0: // Up
             next_neighbor++;
-            neighbor.loc[1]++;
-            return get_site_ptr(neighbor);
+            neighbor.loc[1] += 1;
+            return get_site_ptr(neighbor, new_site);
         case 1: // Down
             next_neighbor++;
-            neighbor.loc[1]--;
-            return get_site_ptr(neighbor);
+            neighbor.loc[1] -= 1;
+            return get_site_ptr(neighbor, new_site);
         case 2: // Left
             next_neighbor++;
-            neighbor.loc[0]--;
-            return get_site_ptr(neighbor);
+            neighbor.loc[0] -= 1;
+            return get_site_ptr(neighbor, new_site);
         case 3: // Right
             next_neighbor++;
-            neighbor.loc[0]++;
-            return get_site_ptr(neighbor);
+            neighbor.loc[0] += 1;
+            return get_site_ptr(neighbor, new_site);
         }
     }
 
@@ -290,9 +296,10 @@ private:
         {
             Site * neighbor = Lattice_ptr->get_next_neighbor();
 
-            if(neighbor->is_occupied()) return;
-
-            available_bonds.insert(Bond_ptr->make_bond(site_ptr, neighbor));
+            if(!neighbor->is_occupied())
+            {
+                available_bonds.insert(Bond_ptr->make_bond(site_ptr, neighbor));
+            }
         }
 
     }
@@ -328,8 +335,9 @@ public:
     {
         current_bond = available_bonds.begin();
 
-        if( (*current_bond)->second->is_occupied())
+                if( (*current_bond)->second->is_occupied())
         {
+
             trapped_bonds.push_back(*current_bond);
         }
         else
@@ -380,6 +388,8 @@ public:
 
 int main(int argc, char **argv)
 {
+    long int N = atoi(argv[1]);
+
     ip_central_Simulation sim;
     Simulation_ptr = & sim;
 
@@ -397,7 +407,7 @@ int main(int argc, char **argv)
 
     Simulation_ptr->initialize_sim();
 
-    for(int i=0; i<500; i++)
+    for(long int i=0; i<N; i++)
     {
         Simulation_ptr->advance_sim();
     }
