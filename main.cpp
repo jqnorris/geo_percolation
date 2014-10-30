@@ -384,6 +384,24 @@ public:
 };
 
 
+class testing_Strength: public Strength
+{
+private:
+    int next_strength;
+
+public:
+    testing_Strength()
+    {
+        next_strength=0;
+    }
+
+    double new_strength()
+    {
+        return next_strength++;
+    }
+
+};
+
 
 
 int main(int argc, char **argv)
