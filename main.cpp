@@ -10,13 +10,16 @@
 
 #define INDEX_TYPE short int
 
+// Forward declare Simulation class
+class Simulation;
+
 // Abstract class for sites
 class Site
 {
 public:
-    virtual bool is_occupied()const=0;
-    virtual void set_occupied_to(bool)=0;
-    virtual Site * make_site()=0;
+    virtual bool is_occupied(void)const=0;
+    virtual void set_occupied_to(bool state)=0;
+    virtual Site * make_site(Simulation * sim)=0;
     virtual ~Site() {};
 };
 
@@ -27,8 +30,10 @@ public:
     Site * first;
     Site * second;
     virtual double get_strength(void)const=0;
-    virtual void set_strength_to(double)=0;
-    virtual Bond * make_bond(Site *, Site *)=0;
+    virtual void set_strength_to(double value)=0;
+    virtual double get_time_to_failure(void)const=0;
+    virtual void set_time_to_failure(double time)=0;
+    virtual Bond * make_bond(Simulation * sim, Site *, Site *)=0;
     virtual ~Bond() {};
 };
 
@@ -37,41 +42,49 @@ public:
 class Lattice
 {
 public:
-    virtual Site * get_origin()=0;
-    virtual void set_current_site(Site *)=0;
-    virtual bool more_neighbors()=0;
+    Simulation * sim;
+    virtual Site * get_origin(void)=0;
+    virtual void set_current_site(Site * this_site)=0;
+    virtual bool more_neighbors(void)=0;
     virtual Site * get_next_neighbor(int * =NULL)=0;
     virtual void write_bond(std::ofstream &, Bond * &)=0;
 };
 
 // Abstract class for simulation
-class Simulation
+class Algorithm
 {
 public:
-    virtual void initialize_sim()=0;
-    virtual void advance_sim()=0;
+    Simulation * sim;
+    virtual void initialize_sim(void)=0;
+    virtual void advance_sim(void)=0;
+    virtual void write_sim_to_file()=0;
 };
 
 // Abstract class for generating times to failure
 class Timing
 {
 public:
-    virtual double new_time_to_failure()=0;
+    virtual double new_time_to_failure(void)=0;
 };
 
 // Abstract class for generating bond strengths
 class Strength
 {
 public:
-    virtual double new_strength()=0;
+    virtual double get_new_strength(void)=0;
 };
 
-Simulation * Simulation_ptr;
-Lattice * Lattice_ptr;
-Site * Site_ptr;
-Bond * Bond_ptr;
-Timing * Timing_ptr;
-Strength * Strength_ptr;
+class Simulation
+{
+public:
+    Algorithm * Algorithm_ptr;
+    Lattice * Lattice_ptr;
+    Site * Site_ptr;
+    Bond * Bond_ptr;
+    Timing * Timing_ptr;
+    Strength * Strength_ptr;
+};
+
 
 // Simplest type site
 class simple_Site: public Site
@@ -91,7 +104,7 @@ public:
         occupied = state;
     }
 
-    Site * make_site()
+    Site * make_site(Simulation * sim)
     {
         simple_Site * temp = new simple_Site;
 
@@ -109,7 +122,7 @@ private:
 
 public:
     ~simple_Bond() {};
-    double get_strength(void) const
+    double get_strength() const
     {
         return strength;
     }
@@ -117,12 +130,20 @@ public:
     {
         strength = value;
     }
-    Bond * make_bond(Site * first, Site * second)
+    double get_time_to_failure(void)const
+    {
+        return 0;
+    }
+    virtual void set_time_to_failure(double time)
+    {
+        return;
+    }
+    Bond * make_bond(Simulation * sim, Site * first, Site * second)
     {
         simple_Bond * temp = new simple_Bond;
         temp->first = first;
         temp->second = second;
-        temp->set_strength_to(Strength_ptr->new_strength());
+        temp->set_strength_to(sim->Strength_ptr->get_new_strength());
         return temp;
     }
 };
@@ -136,7 +157,7 @@ public:
         srand48(time(0));
     }
 
-    double new_strength()
+    double get_new_strength(void)
     {
         return drand48();
     }
@@ -186,7 +207,7 @@ private:
         }
         else
         {
-            loc_ptr = Site_ptr->make_site();
+            loc_ptr = sim->Site_ptr->make_site(sim);
             sites_by_loc.insert(std::make_pair(loc, loc_ptr));
             sites_by_ptr.insert(std::make_pair(loc_ptr, loc));
 
@@ -269,7 +290,7 @@ public:
 };
 
 // Unbound invasion percolation from a central site
-class ip_central_Simulation: public Simulation
+class ip_central_Algorithm: public Algorithm
 {
 private:
     struct bond_comparison
@@ -288,24 +309,24 @@ private:
 
     void invade_site(Site * site_ptr)
     {
-        Lattice_ptr->set_current_site(site_ptr);
+        sim->Lattice_ptr->set_current_site(site_ptr);
 
         site_ptr->set_occupied_to(true);
 
-        while(Lattice_ptr->more_neighbors())
+        while(sim->Lattice_ptr->more_neighbors())
         {
-            Site * neighbor = Lattice_ptr->get_next_neighbor();
+            Site * neighbor = sim->Lattice_ptr->get_next_neighbor();
 
             if(!neighbor->is_occupied())
             {
-                available_bonds.insert(Bond_ptr->make_bond(site_ptr, neighbor));
+                available_bonds.insert(sim->Bond_ptr->make_bond(sim, site_ptr, neighbor));
             }
         }
 
     }
 
 public:
-    ~ip_central_Simulation()
+    ~ip_central_Algorithm()
     {
         for(current_bond=available_bonds.begin(); current_bond != available_bonds.end(); current_bond++)
         {
@@ -327,7 +348,7 @@ public:
 
     void initialize_sim()
     {
-        Site * origin = Lattice_ptr->get_origin();
+        Site * origin = sim->Lattice_ptr->get_origin();
         invade_site(origin);
 
     }
@@ -371,12 +392,12 @@ public:
 
         for(to_write = invaded_bonds.begin(); to_write != invaded_bonds.end(); to_write++)
         {
-            Lattice_ptr->write_bond(toFile1, *to_write);
+            sim->Lattice_ptr->write_bond(toFile1, *to_write);
         }
 
         for(to_write = trapped_bonds.begin(); to_write != trapped_bonds.end(); to_write++)
         {
-            Lattice_ptr->write_bond(toFile2, *to_write);
+            sim->Lattice_ptr->write_bond(toFile2, *to_write);
         }
         toFile1.close();
         toFile2.close();
@@ -395,7 +416,7 @@ public:
         next_strength=0;
     }
 
-    double new_strength()
+    double get_new_strength()
     {
         return next_strength++;
     }
@@ -408,29 +429,35 @@ int main(int argc, char **argv)
 {
     long int N = atoi(argv[1]);
 
-    ip_central_Simulation sim;
-    Simulation_ptr = & sim;
+    Simulation current_sim;
+
+    ip_central_Algorithm algorithm;
+    algorithm.sim = & current_sim;
+    current_sim.Algorithm_ptr = & algorithm;
 
     unbound_square_Lattice_2D lattice;
-    Lattice_ptr = & lattice;
+    lattice.sim = & current_sim;
+    current_sim.Lattice_ptr = & lattice;
 
     uniform_Strength strength;
-    Strength_ptr = & strength;
+    current_sim.Strength_ptr = & strength;
 
     simple_Bond bond;
-    Bond_ptr = & bond;
+    current_sim.Bond_ptr = & bond;
 
     simple_Site site;
-    Site_ptr = & site;
+    current_sim.Site_ptr = & site;
 
-    Simulation_ptr->initialize_sim();
+
+
+    current_sim.Algorithm_ptr->initialize_sim();
 
     for(long int i=0; i<N; i++)
     {
-        Simulation_ptr->advance_sim();
+        current_sim.Algorithm_ptr->advance_sim();
     }
 
-    sim.write_sim_to_file();
+    current_sim.Algorithm_ptr->write_sim_to_file();
 
     return 0;
 }
