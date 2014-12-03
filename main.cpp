@@ -7,6 +7,7 @@
 #include <sstream>
 #include <ctime>
 #include <fstream>
+#include <cmath>
 
 #define INDEX_TYPE short int
 
@@ -47,6 +48,9 @@ public:
     virtual void set_current_site(Site * this_site)=0;
     virtual bool more_neighbors(void)=0;
     virtual Site * get_next_neighbor(int * =NULL)=0;
+    virtual double get_euclidian_distance(Site * site_1, Site * site_2 = NULL)=0;
+    virtual void initialize_network(void)=0;
+    virtual long int get_chemical_distance(Site * site_1, Site * site_2 = NULL)=0;
     virtual void write_bond(std::ofstream &, Bond * &)=0;
 };
 
@@ -58,6 +62,9 @@ public:
     virtual void initialize_sim(void)=0;
     virtual void advance_sim(void)=0;
     virtual void write_sim_to_file()=0;
+    virtual Bond * get_network_begin(void)=0;
+    virtual Bond * get_network_next(void)=0;
+    virtual bool more_network(void)=0;
 };
 
 // Abstract class for generating times to failure
@@ -192,6 +199,31 @@ private:
     std::map<location, Site *> sites_by_loc;
     std::map<Site *, location> sites_by_ptr;
 
+    class Parent
+    {
+    public:
+        Site * site;
+        long int chemical_level;
+        void update(Site* this_site, long int this_chemical_level)
+        {
+            site = this_site;
+            chemical_level = this_chemical_level;
+
+        }
+        Parent()
+        {
+            site = NULL;
+            chemical_level = -1;
+        }
+
+        Parent(Site* this_site, long int this_chemical_level)
+        {
+            update(this_site, this_chemical_level);
+        }
+    };
+
+    std::map<Site *, Parent> network;
+
     Site * get_site_ptr(location loc, int * new_site = NULL)
     {
         Site * loc_ptr;
@@ -276,6 +308,92 @@ public:
         }
     }
 
+    double get_euclidian_distance(Site * site_1, Site * site_2 = NULL)
+    {
+        double distance;
+        location loc_1 = sites_by_ptr[site_1];
+
+
+        if (site_2 == NULL)
+        {
+
+            distance = sqrt(loc_1.loc[0]*loc_1.loc[0] + loc_1.loc[1]*loc_1.loc[1]);
+        }
+        else
+        {
+            location loc_2 = sites_by_ptr[site_2];
+
+            double diff_x = loc_1.loc[0] - loc_2.loc[0];
+            double diff_y = loc_1.loc[1] - loc_2.loc[1];
+
+            distance = sqrt(diff_x*diff_x + diff_y*diff_y);
+        }
+
+        return distance;
+    }
+
+    void initialize_network(void)
+    {
+        Parent temp;
+
+        for(Bond * current_bond = sim->Algorithm_ptr->get_network_begin();
+            sim->Algorithm_ptr->more_network();
+            current_bond = sim->Algorithm_ptr->get_network_next())
+        {
+            if (current_bond->first == get_origin())
+            {
+                temp.update(current_bond->first, 0);
+            }
+            else
+            {
+                temp.update(current_bond->first, (network[current_bond->first]).chemical_level+1);
+            }
+            network.insert(std::make_pair(current_bond->second, temp));
+        }
+
+    }
+
+    long int get_chemical_distance(Site * site_1, Site * site_2 = NULL)
+    {
+        if(site_2 == NULL or site_2 == get_origin())
+        {
+            return network[site_1].chemical_level;
+        }
+        else if (site_1 == get_origin())
+        {
+            return network[site_2].chemical_level;
+        }
+        else
+        {
+            Parent ancestor_1 = network[site_1];
+            Parent ancestor_2 = network[site_2];
+
+
+            long int chem_level_1 = ancestor_1.chemical_level+1;
+            long int chem_level_2 =  ancestor_2.chemical_level+1;
+
+
+            while(ancestor_1.chemical_level > ancestor_2.chemical_level)
+            {
+                ancestor_1 = network[ancestor_1.site];
+
+            }
+            while(ancestor_1.chemical_level < ancestor_2.chemical_level)
+            {
+                ancestor_2 = network[ancestor_2.site];
+
+            }
+
+            while(ancestor_1.site != ancestor_2.site)
+            {
+                ancestor_1 = network[ancestor_1.site];
+                ancestor_2 = network[ancestor_2.site];
+            }
+
+            return (chem_level_1 - ancestor_1.chemical_level) + (chem_level_2 - ancestor_2.chemical_level);
+        }
+    }
+
     void write_bond(std::ofstream & file, Bond * & bond)
     {
         location site = sites_by_ptr[bond->first];
@@ -356,18 +474,16 @@ public:
     {
         current_bond = available_bonds.begin();
 
-                if( (*current_bond)->second->is_occupied())
+        while( (*current_bond)->second->is_occupied())
         {
 
             trapped_bonds.push_back(*current_bond);
-        }
-        else
-        {
-            invaded_bonds.push_back(*current_bond);
-
-            invade_site((*current_bond)->second);
+            available_bonds.erase(current_bond);
+            current_bond = available_bonds.begin();
         }
 
+        invaded_bonds.push_back(*current_bond);
+        invade_site((*current_bond)->second);
         available_bonds.erase(current_bond);
 
         return;
@@ -402,6 +518,24 @@ public:
         toFile1.close();
         toFile2.close();
     }
+
+    std::deque<Bond *>::iterator current_network_iterator;
+
+    Bond * get_network_begin(void)
+    {
+        current_network_iterator = invaded_bonds.begin();
+        return *(current_network_iterator++);
+    }
+
+    Bond * get_network_next(void)
+    {
+        return *(current_network_iterator++);
+    }
+
+    bool more_network(void)
+    {
+        return current_network_iterator != invaded_bonds.end();
+    }
 };
 
 
@@ -419,6 +553,151 @@ public:
     double get_new_strength()
     {
         return next_strength++;
+    }
+
+};
+
+class Statistics
+{
+public:
+    Simulation * sim;
+    Statistics(Simulation * this_sim)
+    {
+        sim = this_sim;
+    }
+
+    Bond * this_bond;
+    double p_c = 0.4975;
+    std::map<long int, long int> burst_distribution;
+    std::map<long int, long int> mass_r_distribution;
+    std::map<long int, long int> mass_l_distribution;
+
+    void get_burst_distribution(void)
+    {
+        long int size_of_this_burst = 0;
+
+        for(this_bond = sim->Algorithm_ptr->get_network_begin();
+            sim->Algorithm_ptr->more_network(); this_bond = sim->Algorithm_ptr->get_network_next())
+        {
+            if(this_bond->get_strength() < p_c)
+            {
+                size_of_this_burst++;
+            }
+            else
+            {
+                if(burst_distribution.count(size_of_this_burst) > 0)
+                {
+                    burst_distribution[size_of_this_burst]++;
+                }
+                else
+                {
+                    burst_distribution.insert(std::make_pair(size_of_this_burst, 1));
+                    size_of_this_burst = 0;
+                }
+            }
+        }
+    }
+
+    void write_burst_distribution_to_file(void)
+    {
+        std::ofstream toFile("burst_distribution.txt", std::ios::trunc);
+
+
+        toFile << burst_distribution.size() << "\n";
+
+        toFile << "Example Burst Distribution\n";
+
+        std::map<long int, long int>::iterator size;
+
+        for(size = burst_distribution.begin(); size != burst_distribution.end(); size++)
+        {
+            toFile << size->first << "\t" << size->second << "\n";
+        }
+
+    }
+
+    void get_mass_r_distribution(void)
+    {
+        sim->Lattice_ptr->initialize_network();
+
+        mass_r_distribution.clear();
+
+        for(this_bond = sim->Algorithm_ptr->get_network_begin();
+            sim->Algorithm_ptr->more_network(); this_bond = sim->Algorithm_ptr->get_network_next())
+        {
+            double distance = ceil(sim->Lattice_ptr->get_euclidian_distance(this_bond->second));
+
+
+            if(mass_r_distribution.count(distance) > 0)
+            {
+                mass_r_distribution[distance]++;
+            }
+            else
+            {
+                mass_r_distribution.insert(std::make_pair(distance, 1));
+            }
+
+        }
+
+    }
+
+    void write_mass_r_distribution_to_file(void)
+    {
+        std::ofstream toFile("mass_r_distribution.txt", std::ios::trunc);
+
+
+        toFile << mass_r_distribution.size() << "\n";
+
+        toFile << "Example Mass_r Distribution\n";
+
+        std::map<long int, long int>::iterator radius;
+
+        for(radius = mass_r_distribution.begin(); radius != mass_r_distribution.end(); radius++)
+        {
+            toFile << radius->first << "\t" << radius->second << "\n";
+        }
+
+    }
+
+    void get_mass_l_distribution(void)
+    {
+        mass_l_distribution.clear();
+
+        for(this_bond = sim->Algorithm_ptr->get_network_begin();
+            sim->Algorithm_ptr->more_network(); this_bond = sim->Algorithm_ptr->get_network_next())
+        {
+            double chem_distance = ceil(sim->Lattice_ptr->get_chemical_distance(this_bond->second));
+
+
+            if(mass_l_distribution.count(chem_distance) > 0)
+            {
+                mass_l_distribution[chem_distance]++;
+            }
+            else
+            {
+                mass_l_distribution.insert(std::make_pair(chem_distance, 1));
+            }
+
+        }
+
+    }
+
+    void write_mass_l_distribution_to_file(void)
+    {
+        std::ofstream toFile("mass_l_distribution.txt", std::ios::trunc);
+
+
+        toFile << mass_l_distribution.size() << "\n";
+
+        toFile << "Example Mass_l Distribution\n";
+
+        std::map<long int, long int>::iterator chem_level;
+
+        for(chem_level = mass_l_distribution.begin(); chem_level != mass_l_distribution.end(); chem_level++)
+        {
+            toFile << chem_level->first << "\t" << chem_level->second << "\n";
+        }
+
     }
 
 };
@@ -458,6 +737,24 @@ int main(int argc, char **argv)
     }
 
     current_sim.Algorithm_ptr->write_sim_to_file();
+
+    Statistics * stats;
+
+    stats = new Statistics(&current_sim);
+
+    stats->get_burst_distribution();
+
+    stats->write_burst_distribution_to_file();
+
+    stats->get_mass_r_distribution();
+
+    stats->write_mass_r_distribution_to_file();
+
+    stats->get_mass_l_distribution();
+
+    stats->write_mass_l_distribution_to_file();
+
+    delete stats;
 
     return 0;
 }
