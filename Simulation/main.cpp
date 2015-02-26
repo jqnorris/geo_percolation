@@ -1,11 +1,9 @@
-
 #include <map>
 #include <set>
 #include <deque>
 #include <iostream>
 #include <stdlib.h>
-//#include <sstream>
-#include <ctime>
+#include <time.h>
 #include <fstream>
 #include <cmath>
 
@@ -14,30 +12,7 @@
 // Forward declare Simulation class
 class Simulation;
 
-// Abstract class for sites
-class Site
-{
-public:
-    virtual bool is_occupied(void)const=0;
-    virtual void set_occupied_to(bool state)=0;
-    virtual Site * make_site(Simulation * sim)=0;
-    virtual ~Site() {};
-};
-
-// Abstract class for bonds
-class Bond
-{
-public:
-    Site * first;
-    Site * second;
-    virtual double get_strength(void)const=0;
-    virtual void set_strength_to(double value)=0;
-    virtual double get_time_to_failure(void)const=0;
-    virtual void set_time_to_failure(double time)=0;
-    virtual Bond * make_bond(Simulation * sim, Site * site_1, Site * site_2)=0;
-    virtual ~Bond() {};
-};
-
+#include "Bond.h"
 
 // Abstract class for lattice of sites/bonds
 class Lattice
@@ -66,6 +41,7 @@ public:
     Simulation * sim;
     virtual void initialize_sim(void)=0;
     virtual void advance_sim(void)=0;
+    virtual void free_up_memory(void)=0;
     virtual void write_sim_to_file()=0;
     virtual Bond * get_network_begin(void)=0;
     virtual Bond * get_network_next(void)=0;
@@ -97,34 +73,6 @@ public:
     Strength * Strength_ptr;
 };
 
-
-// Simplest type site
-class simple_Site: public Site
-{
-private:
-    bool occupied;
-
-public:
-    ~simple_Site() {};
-    bool is_occupied() const
-    {
-        return occupied;
-    }
-
-    void set_occupied_to(bool state)
-    {
-        occupied = state;
-    }
-
-    Site * make_site(Simulation * sim)
-    {
-        simple_Site * temp = new simple_Site;
-
-        temp->occupied = false;
-        return temp;
-    }
-
-};
 
 // Simplest type of bond
 class simple_Bond: public Bond
@@ -166,9 +114,6 @@ unsigned long long rdtsc(){
     __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
     return ((unsigned long long)hi << 32) | lo;
 }
-
-
-
 
 // Uniformly distributed bond strengths
 class uniform_Strength: public Strength
@@ -1141,6 +1086,11 @@ public:
 
     }
 
+    void free_up_memory(void)
+    {
+        available_bonds.clear();
+    }
+
     void write_sim_to_file()
     {
         std::ofstream toFile1("fractures.txt", std::ios::trunc);
@@ -1219,7 +1169,7 @@ public:
     }
 
     Bond * this_bond;
-    double p_c = 0.4975;
+    double p_c = 0.499;
     std::map<long int, long int> burst_distribution;
     std::map<long int, long int> mass_r_distribution;
     std::map<long int, long int> mass_l_distribution;
@@ -1720,6 +1670,9 @@ public:
 
 int main(int argc, char **argv)
 {
+    time_t start, end;
+
+    time(&start);
 
     // Give random number generator a seed
     srand48(rdtsc());
@@ -1735,9 +1688,9 @@ int main(int argc, char **argv)
     // unbound_square_Lattice_2D_with_faults lattice;    
     // lattice.add_fault(atof(argv[2]), atoi(argv[3]), 'v');
 
-    // unbound_square_Lattice_2D lattice;
+    unbound_square_Lattice_2D lattice;
 
-    unbound_cubic_Lattice_3D lattice;
+    // unbound_cubic_Lattice_3D lattice;
     lattice.sim = & current_sim;
 
     current_sim.Lattice_ptr = & lattice;
@@ -1761,7 +1714,8 @@ int main(int argc, char **argv)
         current_sim.Algorithm_ptr->advance_sim();
     }
 
-    current_sim.Algorithm_ptr->write_sim_to_file();
+    // current_sim.Algorithm_ptr->write_sim_to_file();
+    current_sim.Algorithm_ptr->free_up_memory();
 
     Statistics * stats;
 
@@ -1784,6 +1738,10 @@ int main(int argc, char **argv)
     stats->write_branching_statistics_to_file();
 
     delete stats;
+
+    time(&end);
+
+    std::cout << difftime(end,start) << std::endl;
 
     return 0;
 }
