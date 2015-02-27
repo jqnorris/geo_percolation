@@ -9,7 +9,7 @@ import os
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-import fitting
+import plots
 plt.rc('text', usetex=True)
 params = {'text.latex.preamble' : [r'\usepackage{siunitx}', r'\usepackage{amsmath}']}
 plt.rcParams.update(params)
@@ -303,7 +303,7 @@ plt.savefig('mass_l_distribution.pdf', trasparent=True)
 mass_r_distribution = np.array(sorted(mass_r_distribution.items()), dtype=np.int64)
 x = mass_r_distribution[:,0]
 y = mass_r_distribution[:,1]
-fitting.plot_with_fits([x, y/(float(samples)*float(N))])
+plots.plot_distribution([x, y/(float(samples)*float(N))])
 sum_y = np.cumsum(y)/float(samples)
 plt.figure(figsize=(5,4))
 plt.plot(x, sum_y)
