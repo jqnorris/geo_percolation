@@ -31,7 +31,7 @@ class normal:
             else:
                 latex_string += r'\sim e^{-\displaystyle\frac{(x - \mu)^2}{2 \sigma^2}}'      
             if m != None and s != None:
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(*format_params([m, s], error))
                 else:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(m, s)
@@ -47,7 +47,7 @@ class normal:
                             + r'=\displaystyle\frac{1}{2} \left[1'
                             + r'+ \mathrm{erf}\left(\frac{x - \mu}{\sigma \sqrt{2}}\right)\right]')
             if m != None and s != None:            
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(*format_params([m, s], error))
                 else:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(m, s)
@@ -67,7 +67,7 @@ class exponential:
             else:
                 latex_string += r'\sim e^{-\lambda x}'
             if l != None:
-                if len(error) == 1:
+                if error != None and len(error) == 1:
                     latex_string += r'\\ \lambda={0}'.format(*format_params([l,], error))
                 else:
                     latex_string += r'\\ \lambda={0}'.format(l)                
@@ -85,7 +85,7 @@ class exponential:
             else:
                 latex_string += ' = 1 - e^{-\lambda x}'
             if l != None:
-                if len(error) == 1:
+                if error != None and len(error) == 1:
                     latex_string += r'\\ \lambda={0}'.format(*format_params([l,], error))
                 else:
                     latex_string += r'\\ \lambda={0}'.format(l) 
@@ -106,7 +106,7 @@ class lognormal:
             else:
                 latex_string += r'\sim e^{-\displaystyle\frac{(\ln{x} - \mu)^2}{2 \sigma^2}}'
             if m != None and s != None:
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(*format_params([m, s], error))
                 else:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(m, s)
@@ -123,7 +123,7 @@ class lognormal:
                             + r'\left[1 + \mathrm{erf}\left('
                             + r'\displaystyle\frac{\ln{x} - \mu}{\sigma \sqrt{2}}\right)\right]')
             if m != None and s != None:
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(*format_params([m, s], error))
                 else:
                     latex_string += r'\\ \mu={0},\; \sigma={1}'.format(m, s)
@@ -146,7 +146,7 @@ class weibull:
                 latex_string += (r'\sim \left(\displaystyle\frac{x}{\lambda}\right)^{k-1}'
                                 + r'e^{-\left(x / \lambda\right)^k}')
             if l != None and k != None:
-                if len(error) == 2:                    
+                if error != None and len(error) == 2:                    
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(*format_params([l, k], error))
                 else:
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(l, k)
@@ -165,7 +165,7 @@ class weibull:
             else:
                 latex_string += r' = 1 - e^{-\left(x / \lambda\right)^k}'
             if l != None and k != None:
-                if len(error) == 2:                    
+                if error != None and len(error) == 2:                    
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(*format_params([l, k], error))
                 else:
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(l, k)
@@ -190,7 +190,7 @@ class exponentiated_weibull:
                                 + r'\left[1 - e^{-\left(x / \lambda\right)^k}\right]^{\alpha -1}'
                                 + r'e^{-\left(x / \lambda\right)^k}')
             if l != None and k != None and a != None:
-                if len(error) == 3:                    
+                if error != None and len(error) == 3:                    
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(*format_params([l, k, a], error))
                 else:
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(l, k, a)
@@ -208,7 +208,7 @@ class exponentiated_weibull:
             else:
                 latex_string += r' = \left[1 - e^{- \displaystyle \left(x / \lambda\right)^k}\right]^{\alpha}'
             if l != None and k != None and a != None:
-                if len(error) == 3:                    
+                if error != None and len(error) == 3:                    
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(*format_params([l, k, a], error))
                 else:
                     latex_string += r'\\ \lambda={0},\; k={1},\; \alpha={2}'.format(l, k, a)
@@ -228,7 +228,7 @@ class gamma_dist:
             else:
                 latex_string += r'\sim x^{\alpha-1} e^{-x \beta}'
             if a != None and b != None:
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \alpha={0},\; \beta={1}'.format(*format_params([a, b], error))
                 else:
                     latex_string += r'\\ \alpha={0},\; \beta={1}'.format(a, b)
@@ -246,7 +246,7 @@ class gamma_dist:
             else:
                 latex_string += r'= \displaystyle\frac{\gamma(\alpha, \beta x)}{\Gamma(\alpha)}'
             if a != None and b != None:
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \alpha={0},\; \beta={1}'.format(*format_params([a, b], error))
                 else:
                     latex_string += r'\\ \alpha={0},\; \beta={1}'.format(a, b)
@@ -268,7 +268,7 @@ class inverse_gaussian:
                 latex_string += (r'\sim \displaystyle\frac{1}{\sqrt{x^3}}'
                                 + r' e^{\displaystyle\frac{-\lambda (x - \mu)^2 }{2 \mu^2 x}}')
             if m != None and s != None:
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \mu={0},\; \lambda={1}'.format(*format_params([m, l], error))
                 else:
                     latex_string += r'\\ \mu={0},\; \lambda={1}'.format(m, s)
@@ -287,7 +287,7 @@ class inverse_gaussian:
                             + r'\Phi\left(-\sqrt{\frac{\lambda}{x}}'
                             + r'\left(\frac{x}{\mu}+1 \right)\right)\end{align*}')
             if m != None and s != None:            
-                if len(error) == 2:
+                if error != None and len(error) == 2:
                     latex_string += r'\\ \mu={0},\; \lambda={1}'.format(*format_params([m, s], error))
                 else:
                     latex_string += r'\\ \mu={0},\; \lambda={1}'.format(m, s)

@@ -14,13 +14,13 @@ plt.rc('text', usetex=True)
 params = {'text.latex.preamble' : [r'\usepackage{siunitx}', r'\usepackage{amsmath}']}
 plt.rcParams.update(params)
 
-N = 10000000
+N = 5000
 
 samples = 5000
 
 arguments = range(samples)
 
-main_path = '3D Combined'
+main_path = '1D Combined'
 
 branching_distribution = {}
 burst_distribution = {}
@@ -272,12 +272,25 @@ plt.subplots_adjust(bottom=0.2, left=0.2)
 plt.savefig('tokunaga_branching.pdf', trasparent=True)   
 
 # Make plot of burst distribution
-burst_distribution = np.array(sorted(burst_distribution.items()), dtype=np.int64)
-x = burst_distribution[:,0]
-y = burst_distribution[:,1]
-quick_binned = y[:-1]/(1.0*(x[1:]-x[:-1]))
+while empty_bins > 0:
+    num_bins = np.floor(num_bins * (1 - empty_bins/float(num_bins)))
+    bin_edges = np.logspace(np.log(1), np.log10(x[-1]), num=num_bins)
+    bin_counts = 0*bin_edges[1:]
+    i = 0
+
+    for j, edge in enumerate(bin_edges[1:]):
+        while i < len(x) and x[i] <= edge:
+            bin_counts[j] += y[i]
+            i += 1
+    
+    empty_bins = 0
+    for count in bin_counts:
+        if count == 0:
+            empty_bins += 1
+
+normalized_bin_counts = bin_counts/(bin_edges[1:] - bin_edges[:-1])
 plt.figure(figsize=(5,4))
-plt.plot(x[:-1], quick_binned)
+plt.plot(bin_edges[1:], normalized_bin_counts)
 plt.xlabel('Burst Size')
 plt.ylabel('Counts')
 plt.yscale('log')

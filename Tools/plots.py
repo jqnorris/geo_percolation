@@ -44,7 +44,7 @@ def plot_distribution(raw_data, cumulative = False, fit = 'All', file_name = Non
     cdf_ax.plot(x, y_sum, label='Data', color='black', ls='--', lw=2)
     
      # Create a dictionary for choosing which distribution is the best fit
-     # KS:[name, pdf_artist, cdf_artist]
+     # KS:[name, fit_params, pdf_artist, cdf_artist]
     fits = {}
     
     # Loop over all distributions
@@ -58,7 +58,7 @@ def plot_distribution(raw_data, cumulative = False, fit = 'All', file_name = Non
         y_sum_fit = dist.cdf.calc(x, *fit_params)
         plt_2, = cdf_ax.plot(x, y_sum_fit,  label=name)
         KS = np.max(np.abs(y_sum_fit - y_sum))
-        fits[KS] =  [name, plt_1, plt_2]
+        fits[KS] =  [name, fit_params, plt_1, plt_2]
     #except:
     #    pass
        
@@ -67,10 +67,13 @@ def plot_distribution(raw_data, cumulative = False, fit = 'All', file_name = Non
     
     print sorted_keys
     
-    
+    best_fit = fits[sorted_keys[0]]
+
+    print best_fit[0]
+    print (best_fit[1])
 
     plt.figure('pdf')
-    pdf_ax.annotate(distributions.inverse_gaussian.cdf.latex(), xy=(0.5, 0.5), xycoords='axes fraction', ha='center')
+    pdf_ax.annotate((distributions.names[best_fit[0]]).pdf.latex(*(best_fit[1])), xy=(0.5, 0.5), xycoords='axes fraction', ha='center')
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     plt.savefig('maybe_1.pdf')
     plt.close('pdf')
