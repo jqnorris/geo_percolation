@@ -3,12 +3,17 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    Bond.cpp \
+    Site.cpp \
+    Strength.cpp \
+    Lattice.cpp \
+    Algorithm.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
 
 HEADERS += \
-    Site.h \
-    Bond.h
+    Abstract_Classes.h \
+    Forward_Declarations.h
 
