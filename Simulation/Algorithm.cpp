@@ -33,12 +33,9 @@ private:
 
             if(!neighbor->is_occupied())
             {
-                Bond * new_bond = sim->Bond_ptr->make_bond(sim, site_ptr, neighbor);
-
-                if(sim->Lattice_ptr->on_any_fault(new_bond))
-                {
-                    new_bond->set_strength_to(sim->Lattice_ptr->get_fault_fraction(new_bond)*new_bond->get_strength());
-                }
+                Bond * new_bond = sim->Bond_ptr->make_bond(site_ptr, neighbor, sim->Strength_ptr->get_new_strength());
+                sim->Lattice_ptr->modify_strength(new_bond);
+                modify_strength(new_bond);
 
                 available_bonds.insert(new_bond);
             }
@@ -150,5 +147,17 @@ public:
     bool more_network(void)
     {
         return current_network_iterator != invaded_bonds.end();
+    }
+
+    void modify_strength(Bond * bond){}
+
+    bool check_growth(void)
+    {
+        return sim->Lattice_ptr->on_any_fault(get_last_invaded());
+    }
+
+    Bond * get_last_invaded(void)
+    {
+        return invaded_bonds.back();
     }
 };

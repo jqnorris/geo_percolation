@@ -43,7 +43,7 @@ public:
     virtual void set_strength_to(double value)=0;
     virtual double get_time_to_failure(void)const=0;
     virtual void set_time_to_failure(double time)=0;
-    virtual Bond * make_bond(Simulation * sim, Site * site_1, Site * site_2)=0;
+    virtual Bond * make_bond(Site * site_1, Site * site_2, double strength)=0;
     virtual ~Bond() {};
 };
 
@@ -61,10 +61,15 @@ public:
     virtual long int get_chemical_distance(Site * site_1, Site * site_2 = NULL)=0;
     virtual void write_bond(std::ofstream &, Bond * &)=0;
 
+
     // Would like to eliminate
     virtual bool on_any_fault(Bond * bond)=0;
     virtual double get_fault_fraction(Bond * bond)=0;
     virtual Site * get_upstream(Site *)=0;
+
+    // Developing
+    virtual void modify_strength(Bond * bond)=0;
+    virtual void setup_lattice(void)=0;
 };
 
 // Abstract class for simulation
@@ -80,6 +85,11 @@ public:
     virtual Bond * get_network_begin(void)=0;
     virtual Bond * get_network_next(void)=0;
     virtual bool more_network(void)=0;
+
+    // Developing
+    virtual void modify_strength(Bond * bond)=0;
+    virtual bool check_growth(void)=0;
+    virtual Bond * get_last_invaded(void)=0;
 };
 
 // Abstract class for generating bond strengths

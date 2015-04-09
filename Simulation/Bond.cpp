@@ -24,12 +24,12 @@ public:
     {
         return;
     }
-    Bond * make_bond(Simulation * sim, Site * first, Site * second)
+    Bond * make_bond(Site * first, Site * second, double strength)
     {
         simple_Bond * temp = new simple_Bond;
         temp->first = first;
         temp->second = second;
-        temp->set_strength_to(sim->Strength_ptr->get_new_strength());
+        temp->set_strength_to(strength);
         return temp;
     }
 };

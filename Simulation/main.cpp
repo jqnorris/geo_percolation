@@ -18,7 +18,7 @@ public:
     }
 
     Bond * this_bond;
-    double p_c = 0.499;
+    double p_c = 0.24885;
     std::map<long int, long int> burst_distribution;
     std::map<long int, long int> mass_r_distribution;
     std::map<long int, long int> mass_l_distribution;
@@ -517,15 +517,11 @@ public:
 
 };
 
-int main(int argc, char **argv)
+void normal_run(int size_of_run)
 {
     time_t start, end;
 
     time(&start);
-
-    // Give random number generator a seed
-
-    long int N = atoi(argv[1]);
 
     Simulation current_sim;
 
@@ -534,14 +530,19 @@ int main(int argc, char **argv)
     current_sim.Algorithm_ptr = & algorithm;
     current_sim.Algorithm_ptr->set_sim(&current_sim);
 
-    // unbound_square_Lattice_2D_with_faults lattice;    
+    // unbound_square_Lattice_2D_with_faults lattice;
     // lattice.add_fault(atof(argv[2]), atoi(argv[3]), 'v');
 
     // Lattice_1D lattice;
 
-    unbound_square_Lattice_2D lattice;
+    // unbound_square_Lattice_2D lattice;
 
     // unbound_cubic_Lattice_3D lattice;
+
+    // unbound_cubic_Lattice_3D lattice;
+
+    unbound_cubic_Lattice_3D_faults_anisotropy lattice;
+    lattice.setup_lattice();
 
     // unbound_hypercubic_Lattice_6D lattice;
 
@@ -549,8 +550,8 @@ int main(int argc, char **argv)
 
     current_sim.Lattice_ptr = & lattice;
 
-    // uniform_Strength strength;
-    testing_Strength strength;
+    uniform_Strength strength;
+    //testing_Strength strength;
     current_sim.Strength_ptr = & strength;
 
     simple_Bond bond;
@@ -564,7 +565,7 @@ int main(int argc, char **argv)
 
     current_sim.Algorithm_ptr->initialize_sim();
 
-    for(long int i=0; i<N; i++)
+    for(long int i=0; i<size_of_run; i++)
     {
         current_sim.Algorithm_ptr->advance_sim();
     }
@@ -597,6 +598,85 @@ int main(int argc, char **argv)
     time(&end);
 
     std::cout << difftime(end,start) << std::endl;
+}
+
+
+void time_to_fault(long int size_of_run, long int number_of_runs)
+{
+    std::map<long int, long int> time_distribution;
+
+    for(long int i=0; i<number_of_runs; i++)
+    {
+        std::cout << std::endl;
+        std::cout << i << std::endl;
+
+        // Setup Simulation
+        Simulation current_sim;
+
+        ip_central_Algorithm algorithm;
+        current_sim.Algorithm_ptr = & algorithm;
+        current_sim.Algorithm_ptr->set_sim(&current_sim);
+
+        unbound_cubic_Lattice_3D_faults_anisotropy lattice;
+        lattice.setup_lattice();
+        lattice.sim = & current_sim;
+        current_sim.Lattice_ptr = & lattice;
+
+        uniform_Strength strength;
+        current_sim.Strength_ptr = & strength;
+
+        simple_Bond bond;
+        current_sim.Bond_ptr = & bond;
+
+        simple_Site site;
+        current_sim.Site_ptr = & site;
+
+        current_sim.Algorithm_ptr->initialize_sim();
+
+        // Run Simulation
+        long int j;
+        for(j=0; j<size_of_run; j++)
+        {
+            current_sim.Algorithm_ptr->advance_sim();
+            if( current_sim.Algorithm_ptr->check_growth() == true)
+            {
+                break;
+            }
+        }
+
+        // Record Simulation
+        if(time_distribution.count(j) > 0)
+        {
+            time_distribution[j] += 1;
+        }
+        else
+        {
+            time_distribution.insert(std::make_pair(j, 1));
+        }
+    }
+
+    // Write Runs to File
+    std::ofstream toFile("time_distribution.txt", std::ios::trunc);
+
+    toFile << time_distribution.size() << "\n";
+
+    toFile << "Distribution of Times to Fault\n";
+
+    std::map<long int, long int>::iterator time;
+
+    for(time = time_distribution.begin(); time != time_distribution.end(); time++)
+    {
+        toFile << time->first << "\t" << time->second << "\n";
+    }
+}
+
+
+int main(int argc, char **argv)
+{
+    long int size_of_run = atoi(argv[1]);
+    long int num_of_runs = atoi(argv[2]);
+
+    time_to_fault(size_of_run, num_of_runs);
 
     return 0;
 }
