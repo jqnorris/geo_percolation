@@ -1,7 +1,6 @@
 #include <time.h>
+#include <math.h>
 #include "Abstract_Classes.h"
-
-
 #include "Site.cpp"
 #include "Bond.cpp"
 #include "Strength.cpp"
@@ -25,6 +24,11 @@ public:
     std::map<std::pair<int, int>, std::map<int, int> > branch_distribution;
 
     bool network_initialized = false;
+
+    void set_p_c(double value)
+    {
+        p_c = value;
+    }
 
     void get_burst_distribution(void)
     {
@@ -517,7 +521,7 @@ public:
 
 };
 
-void normal_run(int size_of_run)
+void normal_run(int size_of_run, double p_c)
 {
     time_t start, end;
 
@@ -535,13 +539,11 @@ void normal_run(int size_of_run)
 
     // Lattice_1D lattice;
 
-    // unbound_square_Lattice_2D lattice;
+    unbound_square_Lattice_2D lattice;
 
-    // unbound_cubic_Lattice_3D lattice;
+    //unbound_cubic_Lattice_3D lattice;
 
-    // unbound_cubic_Lattice_3D lattice;
-
-    unbound_cubic_Lattice_3D_faults_anisotropy lattice;
+    //unbound_cubic_Lattice_3D_faults_anisotropy lattice;
     lattice.setup_lattice();
 
     // unbound_hypercubic_Lattice_6D lattice;
@@ -570,12 +572,13 @@ void normal_run(int size_of_run)
         current_sim.Algorithm_ptr->advance_sim();
     }
 
-    current_sim.Algorithm_ptr->write_sim_to_file();
-    current_sim.Algorithm_ptr->free_up_memory();
+    //current_sim.Algorithm_ptr->write_sim_to_file();
+    //current_sim.Algorithm_ptr->free_up_memory();
 
     Statistics * stats;
 
     stats = new Statistics(&current_sim);
+    stats->set_p_c(p_c);
 
     stats->get_burst_distribution();
 
@@ -585,13 +588,13 @@ void normal_run(int size_of_run)
 
     stats->write_mass_r_distribution_to_file();
 
-    stats->get_mass_l_distribution();
+    //stats->get_mass_l_distribution();
 
-    stats->write_mass_l_distribution_to_file();
+    //stats->write_mass_l_distribution_to_file();
 
-    stats->get_branching_statistics();
+    //stats->get_branching_statistics();
 
-    stats->write_branching_statistics_to_file();
+    //stats->write_branching_statistics_to_file();
 
     delete stats;
 
@@ -670,13 +673,213 @@ void time_to_fault(long int size_of_run, long int number_of_runs)
     }
 }
 
+void largest_strength(long int size_of_run, long int number_of_runs)
+{
+    std::multiset<double> largest_strengths;
+
+    for(long int i=0; i<number_of_runs; i++)
+    {
+        std::cout << std::endl;
+        std::cout << i << std::endl;
+
+        // Setup Simulation
+        Simulation current_sim;
+
+        ip_central_Algorithm algorithm;
+        current_sim.Algorithm_ptr = & algorithm;
+        current_sim.Algorithm_ptr->set_sim(&current_sim);
+
+        Lattice_1D lattice;
+        // unbound_square_Lattice_2D lattice;
+        // unbound_cubic_Lattice_3D lattice;
+        lattice.setup_lattice();
+        lattice.sim = & current_sim;
+        current_sim.Lattice_ptr = & lattice;
+
+        uniform_Strength strength;
+        current_sim.Strength_ptr = & strength;
+
+        simple_Bond bond;
+        current_sim.Bond_ptr = & bond;
+
+        simple_Site site;
+        current_sim.Site_ptr = & site;
+
+        current_sim.Algorithm_ptr->initialize_sim();
+
+        double largest_strength = 0;
+
+        // Run Simulation
+        long int j;
+        double this_strength;
+        for(j=0; j<size_of_run; j++)
+        {
+            current_sim.Algorithm_ptr->advance_sim();
+            this_strength = (current_sim.Algorithm_ptr->get_last_invaded())->get_strength();
+
+            if(this_strength > largest_strength)
+            {
+                largest_strength = this_strength;
+            }
+        }
+
+        // Record Simulation
+        largest_strengths.insert(largest_strength);
+    }
+
+    // Write Runs to File
+    std::ofstream toFile("strength_distribution.txt", std::ios::trunc);
+
+    toFile.precision(17);
+
+    toFile << largest_strengths.size() << "\n";
+
+    toFile << "Distribution of Largest Strengths for M = " << size_of_run << "\n";
+
+    std::set<double>::iterator strength;
+
+    for(strength = largest_strengths.begin(); strength != largest_strengths.end(); strength++)
+    {
+        toFile << *strength << "\n";
+    }
+}
+
+void strength_distribution(long int size_of_run, long int number_of_runs)
+{
+    int resolution = 100000;
+
+    long int * counts;
+
+    counts = new long int[resolution] { };
+
+    std::multiset<double> largest_strengths;
+
+    for(long int i=0; i<number_of_runs; i++)
+    {
+        std::cout << std::endl;
+        std::cout << i << std::endl;
+
+        // Setup Simulation
+        Simulation current_sim;
+
+        ip_central_Algorithm algorithm;
+        current_sim.Algorithm_ptr = & algorithm;
+        current_sim.Algorithm_ptr->set_sim(&current_sim);
+
+        // Lattice_1D lattice;
+        unbound_square_Lattice_2D lattice;
+        // unbound_cubic_Lattice_3D lattice;
+        lattice.setup_lattice();
+        lattice.sim = & current_sim;
+        current_sim.Lattice_ptr = & lattice;
+
+        uniform_Strength strength;
+        current_sim.Strength_ptr = & strength;
+
+        simple_Bond bond;
+        current_sim.Bond_ptr = & bond;
+
+        simple_Site site;
+        current_sim.Site_ptr = & site;
+
+        current_sim.Algorithm_ptr->initialize_sim();
+
+        // Run Simulation
+        long int j;
+        double this_strength;
+        for(j=0; j<size_of_run; j++)
+        {
+            current_sim.Algorithm_ptr->advance_sim();
+            this_strength = (current_sim.Algorithm_ptr->get_last_invaded())->get_strength();
+
+            counts[(int)(resolution*this_strength)] += 1;
+        }
+    }
+
+    // Write Runs to File
+    std::ofstream toFile("strength_distribution.txt", std::ios::trunc);
+
+    toFile.precision(17);
+
+    toFile << resolution << "\n";
+
+    toFile << "Distribution of Bond Strengths for M = " << size_of_run << "\n";
+
+    for(int i = 1; i <= resolution; i++)
+    {
+        toFile << i*double(1)/double(resolution) << "\t" << counts[i] << "\n";
+    }
+
+    toFile.close();
+
+    delete[] counts;
+}
+
+void natural_fracking(long int size_of_run)
+{
+    Simulation current_sim;
+
+    natural_fracking_Algorithm algorithm;
+    current_sim.Algorithm_ptr = & algorithm;
+    current_sim.Algorithm_ptr->set_sim(&current_sim);
+
+    finite_square_Lattice_2D lattice;
+    lattice.sim = & current_sim;
+    current_sim.Lattice_ptr = & lattice;
+
+    uniform_Strength strength;
+    current_sim.Strength_ptr = & strength;
+
+    simple_Bond bond;
+    current_sim.Bond_ptr = & bond;
+
+    simple_Site site;
+    current_sim.Site_ptr = & site;
+
+    lattice.setup_lattice();
+
+    std::cout << "Setting up Algorithm." << std::endl;
+
+    current_sim.Algorithm_ptr->initialize_sim();
+
+    std::cout << "Running Sim." << std::endl;
+
+    for(long int i=0; i<size_of_run; i++)
+    {
+        current_sim.Algorithm_ptr->advance_sim();
+    }
+
+    current_sim.Algorithm_ptr->write_sim_to_file();
+    current_sim.Algorithm_ptr->free_up_memory();
+
+    Statistics * stats;
+
+    stats = new Statistics(&current_sim);
+
+    stats->get_burst_distribution();
+
+    stats->write_burst_distribution_to_file();
+
+    stats->get_mass_r_distribution();
+
+    stats->write_mass_r_distribution_to_file();
+
+    stats->get_mass_l_distribution();
+
+    stats->write_mass_l_distribution_to_file();
+
+    //stats->get_branching_statistics();
+
+    //stats->write_branching_statistics_to_file();
+
+    delete stats;
+}
 
 int main(int argc, char **argv)
 {
     long int size_of_run = atoi(argv[1]);
-    long int num_of_runs = atoi(argv[2]);
 
-    time_to_fault(size_of_run, num_of_runs);
+    normal_run(size_of_run, 0.5);
 
     return 0;
 }

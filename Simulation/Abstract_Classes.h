@@ -61,7 +61,6 @@ public:
     virtual long int get_chemical_distance(Site * site_1, Site * site_2 = NULL)=0;
     virtual void write_bond(std::ofstream &, Bond * &)=0;
 
-
     // Would like to eliminate
     virtual bool on_any_fault(Bond * bond)=0;
     virtual double get_fault_fraction(Bond * bond)=0;
@@ -70,6 +69,7 @@ public:
     // Developing
     virtual void modify_strength(Bond * bond)=0;
     virtual void setup_lattice(void)=0;
+    virtual bool on_lattice(Site * site)=0;
 };
 
 // Abstract class for simulation
@@ -90,6 +90,7 @@ public:
     virtual void modify_strength(Bond * bond)=0;
     virtual bool check_growth(void)=0;
     virtual Bond * get_last_invaded(void)=0;
+    virtual long int get_breakthrough_count(void)=0;
 };
 
 // Abstract class for generating bond strengths
@@ -107,3 +108,11 @@ public:
 };
 
 #endif // ABSTRACT_CLASSES_H
+
+/*
+ * NOTES
+ *
+ * Sites are managed by Lattice.
+ * Bonds are managed by Algorithm.
+ *
+*/

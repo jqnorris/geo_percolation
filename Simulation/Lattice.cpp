@@ -141,6 +141,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return true;
+    }
 };
 
 // 2D infinite square lattice
@@ -397,6 +402,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
 };
 
 // 3D infinite cubic lattice
@@ -665,6 +675,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
 };
 
 // 4D infinite hypercubic lattice
@@ -947,6 +962,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
 };
 
 // 5D infinite hypercubic lattice
@@ -1241,6 +1261,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
 };
 
 // 6D infinite hypercubic lattice
@@ -1549,6 +1574,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
 };
 
 
@@ -1902,6 +1932,11 @@ public:
     void modify_strength(Bond * bond){}
 
     void setup_lattice(){}
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
 };
 
 // 3D infinite cubic lattice with anisotropy and faults
@@ -2260,6 +2295,330 @@ public:
         c = std::stof((split_string(temp, "=")).second);
 
         from_file.close();
+    }
+
+    bool on_lattice(Site * site)
+    {
+        return false;
+    }
+};
+
+// 2D finite bound lattice
+class finite_square_Lattice_2D: public Lattice
+{
+private:
+    class location
+    {
+    public:
+        int loc[2];
+
+        location() {};
+        location(int first, int second)
+        {
+            loc[0] = first;
+            loc[1] = second;
+        }
+        bool operator< (const location & other) const
+        {
+            if(loc[0] < other.loc[0]) return true;
+            if(other.loc[0] < loc[0]) return false;
+            if(loc[1] < other.loc[1]) return true;
+            return false;
+        }
+    };
+
+    int width;
+    int height;
+
+    location current_site;
+    bool current_site_on_lattice = false;
+    int next_neighbor;
+    std::map<location, Site *> sites_by_loc;
+    std::map<Site *, location> sites_by_ptr;
+
+    class Parent
+    {
+    public:
+        Site * site;
+        long int chemical_level;
+        void update(Site* this_site, long int this_chemical_level)
+        {
+            site = this_site;
+            chemical_level = this_chemical_level;
+
+        }
+        Parent()
+        {
+            site = NULL;
+            chemical_level = -1;
+        }
+
+        Parent(Site* this_site, long int this_chemical_level)
+        {
+            update(this_site, this_chemical_level);
+        }
+    };
+
+    std::map<Site *, Parent> network;
+
+    Site * get_site_ptr(location loc, int * new_site = NULL)
+    {
+        Site * loc_ptr;
+
+        if(sites_by_loc.count(loc) > 0)
+        {
+            loc_ptr = sites_by_loc[loc];
+
+            if(new_site != NULL)
+            {
+                *new_site = 0;
+            }
+        }
+        else
+        {
+            loc_ptr = sim->Site_ptr->make_site(sim);
+            sites_by_loc.insert(std::make_pair(loc, loc_ptr));
+            sites_by_ptr.insert(std::make_pair(loc_ptr, loc));
+
+            if(new_site != NULL)
+            {
+                *new_site = 1;
+            }
+        }
+
+        return loc_ptr;
+    }
+
+public:
+    ~finite_square_Lattice_2D()
+    {
+        std::map<Site *, location>::iterator to_delete;
+
+        for(to_delete = sites_by_ptr.begin(); to_delete != sites_by_ptr.end(); to_delete++)
+        {
+            delete to_delete->first;
+        }
+    }
+
+    Site * get_origin(void)
+    {
+        location origin(0, 0);
+
+        return get_site_ptr(origin);
+    }
+
+    void set_current_site(Site * site)
+    {
+        current_site = sites_by_ptr[site];
+        current_site_on_lattice = on_lattice(site);
+        next_neighbor = 0;
+    }
+
+    bool more_neighbors()
+    {
+        if(current_site_on_lattice && next_neighbor < 4) return true;
+
+        return false;
+    }
+
+    Site * get_next_neighbor(int * new_site = NULL)
+    {
+        location neighbor = current_site;
+
+        switch(next_neighbor)
+        {
+        case 0: // Up
+            next_neighbor++;
+            neighbor.loc[1] += 1;
+            return get_site_ptr(neighbor, new_site);
+        case 1: // Down
+            next_neighbor++;
+            neighbor.loc[1] -= 1;
+            return get_site_ptr(neighbor, new_site);
+        case 2: // Left
+            next_neighbor++;
+            neighbor.loc[0] -= 1;
+            return get_site_ptr(neighbor, new_site);
+        case 3: // Right
+            next_neighbor++;
+            neighbor.loc[0] += 1;
+            return get_site_ptr(neighbor, new_site);
+        }
+    }
+
+    double get_euclidian_distance(Site * site_1, Site * site_2 = NULL)
+    {
+        double distance;
+        location loc_1 = sites_by_ptr[site_1];
+
+
+        if (site_2 == NULL)
+        {
+
+            distance = sqrt(loc_1.loc[0]*loc_1.loc[0] + loc_1.loc[1]*loc_1.loc[1]);
+        }
+        else
+        {
+            location loc_2 = sites_by_ptr[site_2];
+
+            double diff_x = loc_1.loc[0] - loc_2.loc[0];
+            double diff_y = loc_1.loc[1] - loc_2.loc[1];
+
+            distance = sqrt(diff_x*diff_x + diff_y*diff_y);
+        }
+
+        return distance;
+    }
+
+    void initialize_network(void)
+    {
+        Parent temp;
+
+        for(Bond * current_bond = sim->Algorithm_ptr->get_network_begin();
+            sim->Algorithm_ptr->more_network();
+            current_bond = sim->Algorithm_ptr->get_network_next())
+        {
+            if (current_bond->first == get_origin())
+            {
+                temp.update(current_bond->first, 0);
+            }
+            else
+            {
+                temp.update(current_bond->first, (network[current_bond->first]).chemical_level+1);
+            }
+            network.insert(std::make_pair(current_bond->second, temp));
+        }
+
+    }
+
+    long int get_chemical_distance(Site * site_1, Site * site_2 = NULL)
+    {
+        if(site_2 == NULL or site_2 == get_origin())
+        {
+            return network[site_1].chemical_level;
+        }
+        else if (site_1 == get_origin())
+        {
+            return network[site_2].chemical_level;
+        }
+        else
+        {
+            Parent ancestor_1 = network[site_1];
+            Parent ancestor_2 = network[site_2];
+
+
+            long int chem_level_1 = ancestor_1.chemical_level+1;
+            long int chem_level_2 =  ancestor_2.chemical_level+1;
+
+
+            while(ancestor_1.chemical_level > ancestor_2.chemical_level)
+            {
+                ancestor_1 = network[ancestor_1.site];
+            }
+
+            while(ancestor_1.chemical_level < ancestor_2.chemical_level)
+            {
+                ancestor_2 = network[ancestor_2.site];
+            }
+
+            while(ancestor_1.site != ancestor_2.site)
+            {
+                ancestor_1 = network[ancestor_1.site];
+                ancestor_2 = network[ancestor_2.site];
+            }
+
+            return (chem_level_1 - ancestor_1.chemical_level) + (chem_level_2 - ancestor_2.chemical_level);
+        }
+    }
+
+    Site * get_upstream(Site * site)
+    {
+        return network[site].site;
+    }
+
+    void write_bond(std::ofstream & file, Bond * & bond)
+    {
+        location site = sites_by_ptr[bond->first];
+
+        file << bond->get_strength() << "\t" << site.loc[0] << "\t" << site.loc[1] << "\t";
+
+        site = sites_by_ptr[bond->second];
+
+        file << site.loc[0] << "\t" << site.loc[1] << "\n";
+    }
+
+    bool on_any_fault(Bond * bond)
+    {
+        return false;
+    }
+    double get_fault_fraction(Bond * bond)
+    {
+        return 1;
+    }
+
+    void modify_strength(Bond * bond){}
+
+    // Function to split strings
+    typedef std::pair<std::string, std::string> string_pair;
+
+    string_pair split_string(std::string to_split, std::string delimiter)
+    {
+        std::size_t found = to_split.find(delimiter);
+        std::string key = to_split.substr(0, found++);
+        std::string value = to_split.substr(found);
+        return std::make_pair(key, value);
+    }
+
+    void setup_lattice()
+    {
+        // Load lattice parameters from file
+        std::cout << "Loading from file" << std::endl;
+        std::ifstream from_file("lattice_info.txt");
+
+        std::string temp;
+
+        // Read Header
+        getline(from_file, temp);
+        std::cout << temp << std::endl;
+
+        // Load Lattice Dimensions
+        getline(from_file, temp);
+        width = std::stoi((split_string(temp, "=")).second);
+        getline(from_file, temp);
+        height = std::stof((split_string(temp, "=")).second);
+
+        from_file.close();
+
+        // Create all the sites in the lattice
+        for(int i = 0; i < width; i++)
+        {
+            for(int j = 0; j < height; j++)
+            {
+                location this_loc(i, j);
+                get_site_ptr(this_loc);
+            }
+        }
+    }
+
+    bool on_lattice(Site * site)
+    {
+        location loc = sites_by_ptr[site];
+
+        if( loc.loc[0] < 0 || width < loc.loc[0])
+        {
+            return false;
+        }
+        else
+        {
+            if(loc.loc[1] < 0  || height < loc.loc[1])
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
     }
 };
 
