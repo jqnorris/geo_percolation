@@ -1,4 +1,5 @@
 #include "Abstract_Classes.h"
+#include "Simulation.h"
 
 // Simple Site: Simplest type site
 class simple_Site: public Site

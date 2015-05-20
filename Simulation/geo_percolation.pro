@@ -9,12 +9,19 @@ SOURCES += main.cpp \
     Site.cpp \
     Strength.cpp \
     Lattice.cpp \
-    Algorithm.cpp
+    Algorithm.cpp \
+    Analysis.cpp \
+    Tools.cpp \
+    Simulation.cpp \
+    Common_Runs.cpp
 
 include(deployment.pri)
 qtcAddDeployment()
 
 HEADERS += \
     Abstract_Classes.h \
-    Forward_Declarations.h
+    Forward_Declarations.h \
+    Tools.h \
+    Simulation.h \
+    Common_Runs.h
 

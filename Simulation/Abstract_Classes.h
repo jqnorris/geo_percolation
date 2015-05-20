@@ -1,27 +1,8 @@
 #ifndef ABSTRACT_CLASSES_H
 #define ABSTRACT_CLASSES_H
 
+#include "Simulation.h"
 #include <iostream>
-
-// List of abstract classes
-class Site;
-class Bond;
-class Lattice;
-class Algorithm;
-class Strength;
-class Timing;
-
-// Container for storing poiters to abstract classes
-class Simulation
-{
-public:
-    Algorithm * Algorithm_ptr;
-    Lattice * Lattice_ptr;
-    Site * Site_ptr;
-    Bond * Bond_ptr;
-    Timing * Timing_ptr;
-    Strength * Strength_ptr;
-};
 
 // Abstract class for sites
 class Site
@@ -59,7 +40,8 @@ public:
     virtual double get_euclidian_distance(Site * site_1, Site * site_2 = NULL)=0;
     virtual void initialize_network(void)=0;
     virtual long int get_chemical_distance(Site * site_1, Site * site_2 = NULL)=0;
-    virtual void write_bond(std::ofstream &, Bond * &)=0;
+    virtual void write_bond(std::ofstream &, Bond * &)=0;    
+    virtual ~Lattice() {};
 
     // Would like to eliminate
     virtual bool on_any_fault(Bond * bond)=0;
@@ -70,9 +52,10 @@ public:
     virtual void modify_strength(Bond * bond)=0;
     virtual void setup_lattice(void)=0;
     virtual bool on_lattice(Site * site)=0;
+
 };
 
-// Abstract class for simulation
+// Abstract class for algorithm
 class Algorithm
 {
 public:
@@ -85,6 +68,7 @@ public:
     virtual Bond * get_network_begin(void)=0;
     virtual Bond * get_network_next(void)=0;
     virtual bool more_network(void)=0;
+    virtual ~Algorithm() {};
 
     // Developing
     virtual void modify_strength(Bond * bond)=0;
@@ -98,6 +82,7 @@ class Strength
 {
 public:
     virtual double get_new_strength(void)=0;
+    virtual ~Strength() {};
 };
 
 // Abstract class for generating times to failure

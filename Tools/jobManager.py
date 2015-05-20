@@ -11,7 +11,7 @@ import subprocess
 import numpy as np
 
 run_size = 10000
-number_of_runs = 1000
+number_of_runs = 13
 offset = 0
 
 arguments = range(offset, number_of_runs + offset)

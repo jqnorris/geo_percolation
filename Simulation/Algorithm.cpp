@@ -1,4 +1,6 @@
 #include "Abstract_Classes.h"
+#include "Simulation.h"
+#include <map>
 #include <set>
 #include <deque>
 #include <fstream>

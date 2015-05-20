@@ -1,6 +1,14 @@
 #ifndef FORWARD_DECLARATIONS_H
 #define FORWARD_DECLARATIONS_H
 
+// Abstract Classes
+class Site;
+class Bond;
+class Lattice;
+class Algorithm;
+class Strength;
+class Timing;
+
 // Sites
 class simple_Site;
 

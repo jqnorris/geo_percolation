@@ -1,8 +1,9 @@
 #include "Abstract_Classes.h"
+#include "Simulation.h"
+#include "Tools.h"
 #include <map>
 #include <stdlib.h>
 #include <cmath>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <set>
@@ -2090,7 +2091,7 @@ public:
             next_neighbor++;
             neighbor.loc[2] += 1;
             return get_site_ptr(neighbor, new_site);
-        case 5: // Front
+        case 5: // Back
             next_neighbor++;
             neighbor.loc[2] -= 1;
             return get_site_ptr(neighbor, new_site);
@@ -2558,17 +2559,6 @@ public:
 
     void modify_strength(Bond * bond){}
 
-    // Function to split strings
-    typedef std::pair<std::string, std::string> string_pair;
-
-    string_pair split_string(std::string to_split, std::string delimiter)
-    {
-        std::size_t found = to_split.find(delimiter);
-        std::string key = to_split.substr(0, found++);
-        std::string value = to_split.substr(found);
-        return std::make_pair(key, value);
-    }
-
     void setup_lattice()
     {
         // Load lattice parameters from file
@@ -2583,9 +2573,9 @@ public:
 
         // Load Lattice Dimensions
         getline(from_file, temp);
-        width = std::stoi((split_string(temp, "=")).second);
+        width = std::stoi((tools::split_string(temp, "=")).second);
         getline(from_file, temp);
-        height = std::stof((split_string(temp, "=")).second);
+        height = std::stof((tools::split_string(temp, "=")).second);
 
         from_file.close();
 
