@@ -163,7 +163,6 @@ void Simulation::run_sim(void)
         Algorithm_ptr->advance_sim();
     }
 
-    Algorithm_ptr->write_sim_to_file();
     Algorithm_ptr->free_up_memory();
 
     return;
