@@ -2,12 +2,14 @@
 #define TOOLS_H
 
 #include "Abstract_Classes.h"
+#include <map>
 #include <string>
 
 namespace tools
 {
-    // Function to load sim parameters from file
-    void configure_from_file(Simulation & sim);
+    typedef std::map<std::string, std::string> params;
+    // Function to load configuration parameters from file
+    params load_cofiguration_from_file(void);
 
     // Function to split strings
     typedef std::pair<std::string, std::string> string_pair;

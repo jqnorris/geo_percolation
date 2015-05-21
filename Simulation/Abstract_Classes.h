@@ -1,7 +1,7 @@
 #ifndef ABSTRACT_CLASSES_H
 #define ABSTRACT_CLASSES_H
 
-#include "Simulation.h"
+#include "Forward_Declarations.h"
 #include <iostream>
 
 // Abstract class for sites

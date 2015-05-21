@@ -1,6 +1,9 @@
 #ifndef FORWARD_DECLARATIONS_H
 #define FORWARD_DECLARATIONS_H
 
+// Simulation Class
+class Simulation;
+
 // Abstract Classes
 class Site;
 class Bond;

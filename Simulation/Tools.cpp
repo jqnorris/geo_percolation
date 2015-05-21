@@ -41,5 +41,26 @@ namespace tools
 
         return std::make_pair(left, right);
     }
+
+    params load_cofiguration_from_file(void)
+    {
+        // Store all configuration parameters
+        params config_params;
+
+        // Load parameters from file
+        std::ifstream from_file("sim_config.txt");
+
+        // Load header
+        //std::getline(from_file, name);
+
+        // Load parameters
+        std::string temp;
+        while(std::getline(from_file, temp))
+        {
+            config_params.insert(tools::split_string(temp, "="));
+        }
+
+        return config_params;
+    }
 }
 

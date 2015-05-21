@@ -2,6 +2,7 @@
 #define SIMULATION_H
 
 #include "Forward_Declarations.h"
+#include "Tools.h"
 #include <string>
 
 // Container for storing poiters to abstract classes
@@ -20,7 +21,7 @@ public:
     double p_c;
     std::string name;
 
-    void configure_from_file(void);
+    void configure_sim(tools::params params);
     void run_sim(void);
 
     ~Simulation();

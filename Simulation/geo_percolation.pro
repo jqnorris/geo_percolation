@@ -23,5 +23,6 @@ HEADERS += \
     Forward_Declarations.h \
     Tools.h \
     Simulation.h \
-    Common_Runs.h
+    Common_Runs.h \
+    Analysis.h
 
