@@ -1,0 +1,14 @@
+name = Testing simulation configuation
+size_of_run = 10000
+number_of_runs = 1
+dimensions = 2
+lattice_type = unbound_cubic
+p_c= 0.2488126
+type_of_run= invasion
+type_of_strength = uniform
+fractures = false
+bursts = true
+mass_r = false
+mass_l = false
+branching = false
+fault = false

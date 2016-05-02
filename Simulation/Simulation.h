@@ -5,7 +5,7 @@
 #include "Tools.h"
 #include <string>
 
-// Container for storing poiters to abstract classes
+// Container for storing pointers to abstract classes
 class Simulation
 {
 public:

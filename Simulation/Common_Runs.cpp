@@ -1,6 +1,6 @@
 #include "Common_Runs.h"
 #include <time.h>
-#include "Analysis.cpp"
+#include "Analysis.h"
 #include "Tools.h"
 #include "Abstract_Classes.h"
 #include "Forward_Declarations.h"

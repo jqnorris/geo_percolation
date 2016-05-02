@@ -78,6 +78,9 @@ public:
         case 1: // right
             next_neighbor++;
             return get_site_ptr(neighbor + 1 , new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
         }
     }
 
@@ -89,13 +92,13 @@ public:
 
         if (site_2 == NULL)
         {
-            distance = abs(loc_1);
+            distance = llabs(loc_1);
         }
         else
         {
             location loc_2 = sites_by_ptr[site_2];
 
-            distance = abs(loc_2 - loc_1);
+            distance = llabs(loc_2 - loc_1);
         }
 
         return distance;
@@ -283,7 +286,10 @@ public:
         case 3: // Right
             next_neighbor++;
             neighbor.loc[0] += 1;
-            return get_site_ptr(neighbor, new_site);
+                return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
         }
     }
 
@@ -552,10 +558,14 @@ public:
             next_neighbor++;
             neighbor.loc[2] += 1;
             return get_site_ptr(neighbor, new_site);
-        case 5: // Front
+        case 5: // Back
             next_neighbor++;
             neighbor.loc[2] -= 1;
-            return get_site_ptr(neighbor, new_site);
+                return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
+
         }
     }
 
@@ -840,7 +850,11 @@ public:
         case 7: // In
             next_neighbor++;
             neighbor.loc[3] -= 1;
-            return get_site_ptr(neighbor, new_site);
+                return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
+
         }
     }
 
@@ -1138,7 +1152,11 @@ public:
         case 9: // Bottom
             next_neighbor++;
             neighbor.loc[4] -= 1;
-            return get_site_ptr(neighbor, new_site);
+                return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
+
         }
     }
 
@@ -1448,7 +1466,11 @@ public:
         case 11: // Right
             next_neighbor++;
             neighbor.loc[5] -= 1;
-            return get_site_ptr(neighbor, new_site);
+                return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
+
         }
     }
 
@@ -1672,6 +1694,8 @@ private:
 
                 return false;
             }
+            
+            return false;
 
         }
     };
@@ -1816,6 +1840,10 @@ public:
             next_neighbor++;
             neighbor.loc[0] += 1;
             return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
+
         }
     }
 
@@ -2095,6 +2123,10 @@ public:
             next_neighbor++;
             neighbor.loc[2] -= 1;
             return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
+
         }
     }
 
@@ -2444,6 +2476,9 @@ public:
             next_neighbor++;
             neighbor.loc[0] += 1;
             return get_site_ptr(neighbor, new_site);
+        default:
+            std::cout << "Bad neighbor number.\n";
+            exit (EXIT_FAILURE);
         }
     }
 
